@@ -4,29 +4,9 @@ android:layout_width="match_parent"
 android:layout_height="match_parent"
 android:orientation="vertical">
 
-    <ListView
-        android:id="@+id/list_view"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_weight="3"/>
-
     <FrameLayout
         android:id="@+id/reactNativeFragment"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_weight="1"/>
-
-    <Button
-        android:layout_margin="2dp"
-        android:id="@+id/button"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Show react fragment" />
-    <TextView
-        android:id="@+id/socketText"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/socketText"
-        />
+        android:layout_height="match_parent"/>
 
 </LinearLayout>

@@ -23,11 +23,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".SignInActivity"
-            android:label="@string/name_sign_in_activity">
-        </activity>
-        <activity android:name=".CommunicationActivity" android:label="CommunicationActivity" />
         <activity android:name="com.facebook.react.devsupport.DevSettingsActivity" />
     </application>
 

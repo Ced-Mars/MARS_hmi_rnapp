@@ -1,180 +1,188 @@
 package com.example.myapplication;
 
-import android.content.Context;
-import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
+
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 
-import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.ListView;
-import android.widget.TextView;
-
-import com.facebook.react.ReactActivity;
-import com.facebook.react.ReactActivityDelegate;
 import com.facebook.react.ReactFragment;
 import com.facebook.react.modules.core.DefaultHardwareBackBtnHandler;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
+import com.google.android.gms.wearable.CapabilityClient;
+import com.google.android.gms.wearable.CapabilityInfo;
+import com.google.android.gms.wearable.DataClient;
+import com.google.android.gms.wearable.DataEventBuffer;
+import com.google.android.gms.wearable.DataItem;
+import com.google.android.gms.wearable.MessageClient;
+import com.google.android.gms.wearable.MessageEvent;
+import com.google.android.gms.wearable.PutDataMapRequest;
+import com.google.android.gms.wearable.PutDataRequest;
+import com.google.android.gms.wearable.Wearable;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import io.socket.client.IO;
 import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
 
 
-/**
- * Simple list-based Activity to redirect to one of the other Activities. The code here is
- * uninteresting, {@link SignInActivity} is a good place to start if you are curious about
- * {@code GoogleSignInApi}.
- */
-public class MainActivity extends ReactActivity implements AdapterView.OnItemClickListener, DefaultHardwareBackBtnHandler {
-    TextView socketText;
+public class MainActivity extends AppCompatActivity implements DefaultHardwareBackBtnHandler,
+        MessageClient.OnMessageReceivedListener, CapabilityClient.OnCapabilityChangedListener, DataClient.OnDataChangedListener {
+
+    private static final String TAG = "MainActivity";
+
+//    private static final String COUNT_PATH = "/count";
+//    private static final String COUNT_KEY = "count_key";
+//    private static final String ACTION_PATH = "/action";
+//    private static final String ACTION_KEY = "action_key";
 
     private Socket mSocket;
     {
         try {
-            mSocket = IO.socket("http://10.0.2.2:4001");
+            mSocket = IO.socket("http://192.168.43.102:4001");
         } catch (URISyntaxException e) {}
     }
-
-    private static final Class[] CLASSES = new Class[]{
-            SignInActivity.class,
-            CommunicationActivity.class
-    };
-
-    private static final int[] DESCRIPTION_IDS = new int[] {
-            R.string.desc_sign_in_activity,
-            R.string.start_communication_activity,
-    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        mSocket.on("ProchaineAction", onNewMessage);
+        mSocket.on("TempsAction", onNewMessage);
         mSocket.connect();
-        mSocket.on("ActiveStep", onNewMessage);
+
         setContentView(R.layout.activity_chooser);
 
-        // Set up ListView and Adapter
-        ListView listView = findViewById(R.id.list_view);
+        Fragment reactNativeFragment = new ReactFragment.Builder()
+                .setComponentName("myreactnativeapp")
+                .setLaunchOptions(getLaunchOptions())
+                .build();
 
-        Button mButton = findViewById(R.id.button);
-        socketText = findViewById(R.id.socketText);
-        mButton.setOnClickListener(v -> {
-            Fragment reactNativeFragment = new ReactFragment.Builder()
-                    .setComponentName("myreactnativeapp")
-                    .setLaunchOptions(getLaunchOptions("message envoyé depuis android"))
-                    .build();
+        getSupportFragmentManager()
+                .beginTransaction()
+                .add(R.id.reactNativeFragment, reactNativeFragment)
+                .commit();
 
-            getSupportFragmentManager()
-                    .beginTransaction()
-                    .add(R.id.reactNativeFragment, reactNativeFragment)
-                    .commit();
-        });
-
-        MyArrayAdapter adapter = new MyArrayAdapter(this, android.R.layout.simple_list_item_2, CLASSES);
-        adapter.setDescriptionIds(DESCRIPTION_IDS);
-
-        listView.setAdapter(adapter);
-        listView.setOnItemClickListener(this);
-    }
-
-    private Bundle getLaunchOptions(String message) {
-        Bundle initialProperties = new Bundle();
-        initialProperties.putString("message", message);
-        return initialProperties;
     }
 
     @Override
-    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        Class clicked = CLASSES[position];
-        startActivity(new Intent(this, clicked));
+    public void onResume() {
+        super.onResume();
+
+        // Instantiates clients without member variables, as clients are inexpensive to create and
+        // won't lose their listeners. (They are cached and shared between GoogleApi instances.)
+        Wearable.getDataClient(this).addListener(this);
+        Wearable.getMessageClient(this).addListener(this);
     }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        Wearable.getDataClient(this).addListener(this);
+        Wearable.getMessageClient(this).removeListener(this);
+    }
+
+    @Override
+    public void onCapabilityChanged(@NonNull final CapabilityInfo capabilityInfo) {
+        LOGD(TAG, "onCapabilityChanged: " + capabilityInfo);
+    }
+
+    @Override
+    public void onDataChanged(@NonNull DataEventBuffer dataEvents){
+        LOGD(TAG, "onDataChanged: " + dataEvents);
+    }
+
+    @Override
+    public void onMessageReceived(@NonNull MessageEvent messageEvent) {
+        LOGD(
+                TAG,
+                "onMessageReceived() A message from watch was received:"
+                        + messageEvent.getRequestId()
+                        + " "
+                        + messageEvent.getPath());
+    }
+
+    private Bundle getLaunchOptions() {
+        Bundle initialProperties = new Bundle();
+        initialProperties.putString("message", "message envoyé depuis android");
+        return initialProperties;
+    }
+
 
     @Override
     public void invokeDefaultOnBackPressed() {
 
     }
 
-    public static class MyArrayAdapter extends ArrayAdapter<Class> {
-
-        private Context mContext;
-        private Class[] mClasses;
-        private int[] mDescriptionIds;
-
-        public MyArrayAdapter(Context context, int resource, Class[] objects) {
-            super(context, resource, objects);
-
-            mContext = context;
-            mClasses = objects;
-        }
-
-        @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-            View view = convertView;
-
-            if (convertView == null) {
-                LayoutInflater inflater = (LayoutInflater) mContext.getSystemService(LAYOUT_INFLATER_SERVICE);
-                view = inflater.inflate(android.R.layout.simple_list_item_2, null);
-            }
-
-            ((TextView) view.findViewById(android.R.id.text1)).setText(mClasses[position].getSimpleName());
-            ((TextView) view.findViewById(android.R.id.text2)).setText(mDescriptionIds[position]);
-
-            return view;
-        }
-
-        public void setDescriptionIds(int[] descriptionIds) {
-            mDescriptionIds = descriptionIds;
+    /** As simple wrapper around Log.d */
+    private static void LOGD(final String tag, String message) {
+        if (Log.isLoggable(tag, Log.DEBUG)) {
+            Log.d(tag, message);
         }
     }
 
-    private Emitter.Listener onNewMessage = args -> this.runOnUiThread((Runnable) () -> {
-        Object[] data = args;
-        int message;
-        message = (int) args[0];
-        Log.i("what is it", args.getClass().getName());
-
-        // add the message to view
-        addMessage(message);
+    private Emitter.Listener onNewMessage = args -> this.runOnUiThread(() -> {
+            Log.i("Get value from socket", "" + Arrays.toString(args));
+        try {
+            execute((String) args[2], (String) args[1], (JSONObject) args[0]);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
     });
 
-    private void addMessage(int message) {
-        socketText.setText(String.valueOf(message));
+
+    public void execute(String key, String path, JSONObject value) throws JSONException {
+        String[] dataToWear = new String[3];
+        String current = value.getString("current");
+        String next = value.getString("next");
+        Integer time = value.getInt("time");
+        dataToWear[0] = current;
+        dataToWear[1] = next;
+        dataToWear[2] = String.valueOf(time);
+
+        Log.i(TAG, "New String[]: " + Arrays.toString(dataToWear));
+
+        Executors.newSingleThreadExecutor().execute(() -> {
+            PutDataMapRequest putDataMapRequest = PutDataMapRequest.createWithAutoAppendedId(path);
+            putDataMapRequest.getDataMap().putStringArray(key, dataToWear);
+            PutDataRequest request = putDataMapRequest.asPutDataRequest();
+            request.setUrgent();
+            Task<DataItem> dataItemTask =
+                    Wearable.getDataClient(getApplicationContext()).putDataItem(request);
+            try {
+                // Block on a task and get the result synchronously (because this is on a background
+                // thread).
+                DataItem dataItem = Tasks.await(dataItemTask);
+
+                Log.i(TAG, "DataItem saved: " + dataItem);
+
+            } catch (ExecutionException exception) {
+                Log.e(TAG, "Task failed: " + exception);
+
+            } catch (InterruptedException exception) {
+                Log.e(TAG, "Interrupt occurred: " + exception);
+            }
+        });
     }
+
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-
+        mSocket.off("ProchaineAction", onNewMessage);
+        mSocket.off("TempsAction", onNewMessage);
         mSocket.disconnect();
-        mSocket.off("new message", onNewMessage);
-    }
-
-    @Override
-    protected ReactActivityDelegate createReactActivityDelegate() {
-        return new ReactActivityDelegate(this, getMainComponentName()) {
-            @Override
-            protected Bundle getLaunchOptions() {
-                Bundle initialProperties = new Bundle();
-                ArrayList<String> imageList = new ArrayList<>(Arrays.asList(
-                        "http://foo.com/bar1.png",
-                        "http://foo.com/bar2.png"
-                ));
-                initialProperties.putStringArrayList("images", imageList);
-                return initialProperties;
-            }
-        };
     }
 }

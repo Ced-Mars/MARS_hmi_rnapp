@@ -1,9 +1,11 @@
 package com.example.myapplication;
 
-import android.graphics.Bitmap;
 import android.util.Log;
 
 import androidx.recyclerview.widget.RecyclerView.ViewHolder;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * Classes representing data used for each custom {@link ViewHolder} in {@link
@@ -11,7 +13,6 @@ import androidx.recyclerview.widget.RecyclerView.ViewHolder;
  */
 public class DataLayerScreen {
 
-    public static final int TYPE_IMAGE_ASSET = 0;
     public static final int TYPE_EVENT_LOGGING = 1;
     public static final int TYPE_CAPABILITY_DISCOVERY = 2;
 
@@ -24,41 +25,17 @@ public class DataLayerScreen {
     }
 
     /**
-     * Represents {@link Bitmap} passed to Wear device via {@link
-     * com.google.android.gms.wearable.Asset} data layer API.
-     */
-    public static class ImageAssetData implements DataLayerScreenData {
-
-        private Bitmap mBitmap;
-
-        ImageAssetData(Bitmap bitmap) {
-            mBitmap = bitmap;
-        }
-
-        @Override
-        public int getType() {
-            return TYPE_IMAGE_ASSET;
-        }
-
-        public Bitmap getBitmap() {
-            return mBitmap;
-        }
-
-        public void setBitmap(Bitmap bitmap) {
-            mBitmap = bitmap;
-        }
-    }
-
-    /**
      * Represents message event logs passed to Wear device via {@link
      * com.google.android.gms.wearable.MessageClient} data layer API.
      */
     public static class EventLoggingData implements DataLayerScreenData {
 
-        private StringBuilder mLogBuilder;
+        private JSONObject mLogBuilder;
 
-        EventLoggingData() {
-            mLogBuilder = new StringBuilder();
+        EventLoggingData() throws JSONException {
+            mLogBuilder = new JSONObject();
+            mLogBuilder.put("time", "");
+            mLogBuilder.put("action", "");
         }
 
         @Override
@@ -66,16 +43,18 @@ public class DataLayerScreen {
             return TYPE_EVENT_LOGGING;
         }
 
-        public String getLog() {
-            return mLogBuilder.toString();
+        public JSONObject getLog() {
+            return mLogBuilder;
         }
 
-        public void addEventLog(String eventName, String data) {
-            Log.i("data to mLogBuilder : ", data);
-            mLogBuilder.setLength(0); // set length of buffer to 0
-            mLogBuilder.trimToSize(); // trim the underlying buffer
-            mLogBuilder.append(data);//Add data to StringBuilder
-            //mLogBuilder.append("\n" + eventName + "\n" + data);
+        public void addEventLog(String eventName, String data) throws JSONException {
+            if (eventName.equals("Count")){
+                mLogBuilder.put("time", Integer.valueOf(data));
+            }else if (eventName.equals("Action")){
+                mLogBuilder.put("action", data);
+            }else{
+                Log.i("Event", "Unknow Event");
+            }
         }
     }
 

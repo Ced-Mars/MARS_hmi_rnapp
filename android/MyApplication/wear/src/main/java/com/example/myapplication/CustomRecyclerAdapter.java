@@ -2,7 +2,6 @@ package com.example.myapplication;
 
 import static com.example.myapplication.DataLayerScreen.TYPE_CAPABILITY_DISCOVERY;
 import static com.example.myapplication.DataLayerScreen.TYPE_EVENT_LOGGING;
-import static com.example.myapplication.DataLayerScreen.TYPE_IMAGE_ASSET;
 
 import android.graphics.Bitmap;
 import android.os.Handler;
@@ -23,7 +22,9 @@ import androidx.wear.widget.WearableRecyclerView;
 
 import com.example.myapplication.DataLayerScreen.DataLayerScreenData;
 import com.example.myapplication.DataLayerScreen.EventLoggingData;
-import com.example.myapplication.DataLayerScreen.ImageAssetData;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 
@@ -51,15 +52,6 @@ public class CustomRecyclerAdapter extends RecyclerView.Adapter<RecyclerView.Vie
         RecyclerView.ViewHolder viewHolder = null;
 
         switch (viewType) {
-            case TYPE_IMAGE_ASSET:
-                viewHolder =
-                        new ImageAssetViewHolder(
-                                LayoutInflater.from(viewGroup.getContext())
-                                        .inflate(
-                                                R.layout.recycler_row_image_asset,
-                                                viewGroup,
-                                                false));
-                break;
 
             case TYPE_EVENT_LOGGING:
                 viewHolder =
@@ -90,22 +82,20 @@ public class CustomRecyclerAdapter extends RecyclerView.Adapter<RecyclerView.Vie
         Log.d(TAG, "Element " + position + " set.");
 
         switch (viewHolder.getItemViewType()) {
-            case TYPE_IMAGE_ASSET:
-                ImageAssetData imageAssetData = (ImageAssetData) mDataSet.get(position);
-
-                ImageAssetViewHolder imageAssetViewHolder = (ImageAssetViewHolder) viewHolder;
-                imageAssetViewHolder.setBackgroundImage(imageAssetData.getBitmap());
-                break;
 
             case TYPE_EVENT_LOGGING:
                 EventLoggingData eventLoggingData = (EventLoggingData) mDataSet.get(position);
 
                 EventLoggingViewHolder eventLoggingViewHolder = (EventLoggingViewHolder) viewHolder;
 
-                String log = eventLoggingData.getLog();
+                JSONObject log = eventLoggingData.getLog();
 
                 if (log.length() > 0) {
-                    eventLoggingViewHolder.logDataLayerInformation(eventLoggingData.getLog());
+                    try {
+                        eventLoggingViewHolder.logDataLayerInformation(eventLoggingData.getLog());
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
                 }
                 break;
 
@@ -137,7 +127,7 @@ public class CustomRecyclerAdapter extends RecyclerView.Adapter<RecyclerView.Vie
         return -1;
     }
 
-    public void appendToDataEventLog(@NonNull String eventName, @NonNull String details) {
+    public void appendToDataEventLog(@NonNull String eventName, @NonNull String details) throws JSONException {
         int index = findItemIndex(TYPE_EVENT_LOGGING);
 
         if (index > -1) {
@@ -145,42 +135,6 @@ public class CustomRecyclerAdapter extends RecyclerView.Adapter<RecyclerView.Vie
             dataItemType.addEventLog(eventName, details);
 
             notifyItemChanged(index);
-        }
-    }
-
-    public int setImageAsset(Bitmap bitmap) {
-
-        int index = findItemIndex(TYPE_IMAGE_ASSET);
-
-        if ((index > -1) && (bitmap != null)) {
-            ImageAssetData imageAssetData = (ImageAssetData) mDataSet.get(index);
-            imageAssetData.setBitmap(bitmap);
-            notifyItemChanged(index);
-
-            return index;
-
-        } else {
-            return -1;
-        }
-    }
-
-    /** ***** Classes representing custom {@link ViewHolder}. ****** */
-
-    /**
-     * Displays {@link Bitmap} passed from other devices via the {@link
-     * com.google.android.gms.wearable.Asset} API.
-     */
-    public static class ImageAssetViewHolder extends RecyclerView.ViewHolder {
-
-        private final ImageView mImageView;
-
-        public ImageAssetViewHolder(View view) {
-            super(view);
-            mImageView = view.findViewById(R.id.image);
-        }
-
-        public void setBackgroundImage(Bitmap bitmap) {
-            mImageView.setImageBitmap(bitmap);
         }
     }
 
@@ -193,11 +147,13 @@ public class CustomRecyclerAdapter extends RecyclerView.Adapter<RecyclerView.Vie
         private final TextView mIntroTextView;
         private final LinearLayout mDataLogTextView;
         private final TextView tempsRestant;
+        private final TextView prochaineAction;
         private final CurvedTextView currentState;
         private final ProgressBar progress;
         int i;
         int minutes = 0;
         int secondes = 0;
+        String action;
 
         public EventLoggingViewHolder(View view) {
             super(view);
@@ -209,6 +165,7 @@ public class CustomRecyclerAdapter extends RecyclerView.Adapter<RecyclerView.Vie
             currentState.setVisibility(View.INVISIBLE);
             progress = view.findViewById(R.id.progress);
             progress.setVisibility(View.INVISIBLE);
+            prochaineAction = view.findViewById(R.id.prochaine_action_text);
         }
 
         @Override
@@ -216,23 +173,23 @@ public class CustomRecyclerAdapter extends RecyclerView.Adapter<RecyclerView.Vie
             return (String) tempsRestant.getText();
         }
 
-        public void logDataLayerInformation(String log) {
+        public void logDataLayerInformation(JSONObject log) throws JSONException {
             mIntroTextView.setVisibility(View.INVISIBLE);
             mDataLogTextView.setVisibility(View.VISIBLE);
             progress.setVisibility(View.VISIBLE);
             currentState.setVisibility(View.VISIBLE);
-            Log.i("compteur", log);
-            i = Integer.parseInt(log);
+            i = (int) log.get("time");
+            action = (String) log.get("action");
+            prochaineAction.setText(action);
+            Log.i("compteur + action", "" + "" + i + "+" + action);
             if (i > 0) {
-                progress.setProgress(i*100/60);
+                progress.setProgress(i*100/i);
                 minutes = (i) / 60;
                 secondes = (i) % 60;
                 tempsRestant.setText(minutes + " min " + secondes + " s");
-
             } else {
                 Log.i("Counter Info", "Counter value : " + i);
             }
-
         }
     }
 

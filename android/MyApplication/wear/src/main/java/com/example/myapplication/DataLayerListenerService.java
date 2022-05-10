@@ -20,19 +20,19 @@ public class DataLayerListenerService extends WearableListenerService {
     private static final String START_ACTIVITY_PATH = "/start-activity";
     private static final String DATA_ITEM_RECEIVED_PATH = "/data-item-received";
     public static final String COUNT_PATH = "/count";
-    public static final String IMAGE_PATH = "/image";
-    public static final String IMAGE_KEY = "photo";
+    public static final String ACTION_PATH = "/action";
+    public static final String SEQUENCE_PATH = "/sequence";
 
     @Override
     public void onDataChanged(DataEventBuffer dataEvents) {
-        Log.d(TAG, "onDataChanged: " + dataEvents);
+        Log.d(TAG, "onDataChangedListener: " + dataEvents);
 
         // Loop through the events and send a message back to the node that created the data item.
         for (DataEvent event : dataEvents) {
             Uri uri = event.getDataItem().getUri();
             String path = uri.getPath();
 
-            if (COUNT_PATH.equals(path)) {
+            if (COUNT_PATH.equals(path) || ACTION_PATH.equals(path) || SEQUENCE_PATH.equals(path)) {
                 // Get the node id of the node that created the data item from the host portion of
                 // the uri.
                 String nodeId = uri.getHost();

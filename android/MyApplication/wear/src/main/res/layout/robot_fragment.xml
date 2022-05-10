@@ -27,14 +27,7 @@
         android:layout_height="match_parent"
         app:boxedEdges="all">
 
-        <TextView
-            android:id="@+id/intro"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:textSize="20sp"
-            android:gravity="center"
-            android:fontFamily="sans-serif-condensed-light"
-            android:text="@string/intro"/>
+
 
         <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
             android:orientation="vertical"
@@ -42,7 +35,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:weightSum="2"
-            android:padding="5dp"> <!-- to show what the parent is -->
+            android:padding="5dp">
             <LinearLayout
                 android:layout_height="0dp"
                 android:layout_width="match_parent"
@@ -86,7 +79,7 @@
                     android:layout_height="match_parent">
 
                     <TextView
-                        android:id="@+id/prochaine_action"
+                        android:id="@+id/prochaine_action_text"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         app:layout_constraintTop_toTopOf="parent"
@@ -94,10 +87,10 @@
                         android:text="Prochaine Action"/>
 
                     <TextView
-                        android:id="@+id/prochaine_action_text"
+                        android:id="@+id/prochaine_action"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        app:layout_constraintTop_toBottomOf="@id/prochaine_action"
+                        app:layout_constraintTop_toBottomOf="@id/prochaine_action_text"
                         android:gravity="center"
                         android:text="..............."/>
 
@@ -108,3 +101,4 @@
         </LinearLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.wear.widget.BoxInsetLayout>
+
