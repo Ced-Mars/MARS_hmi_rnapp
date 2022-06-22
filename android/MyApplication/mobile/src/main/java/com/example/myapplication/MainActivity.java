@@ -1,6 +1,12 @@
 package com.example.myapplication;
 
+
+import android.media.AudioManager;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
 import android.os.Bundle;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -9,7 +15,6 @@ import androidx.fragment.app.Fragment;
 
 import com.facebook.react.ReactFragment;
 import com.facebook.react.modules.core.DefaultHardwareBackBtnHandler;
-import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.android.gms.wearable.CapabilityClient;
@@ -28,10 +33,7 @@ import org.json.JSONObject;
 
 import java.net.URISyntaxException;
 import java.util.Arrays;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import io.socket.client.IO;
@@ -44,15 +46,15 @@ public class MainActivity extends AppCompatActivity implements DefaultHardwareBa
 
     private static final String TAG = "MainActivity";
 
-//    private static final String COUNT_PATH = "/count";
-//    private static final String COUNT_KEY = "count_key";
-//    private static final String ACTION_PATH = "/action";
-//    private static final String ACTION_KEY = "action_key";
+    private Vibrator vibrator;
+    private VibrationEffect vibe;
+
+    private final long[] vibrationPattern = {0, 500, 50, 300};
 
     private Socket mSocket;
     {
         try {
-            mSocket = IO.socket("http://192.168.43.102:4001");
+            mSocket = IO.socket("http://192.168.43.103:4001");
         } catch (URISyntaxException e) {}
     }
 
@@ -62,6 +64,10 @@ public class MainActivity extends AppCompatActivity implements DefaultHardwareBa
         mSocket.on("ProchaineAction", onNewMessage);
         mSocket.on("TempsAction", onNewMessage);
         mSocket.connect();
+
+        vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+        int indexInPatternToRepeat = -1;
+        vibe = VibrationEffect.createWaveform(vibrationPattern, indexInPatternToRepeat);
 
         setContentView(R.layout.activity_chooser);
 
@@ -152,6 +158,8 @@ public class MainActivity extends AppCompatActivity implements DefaultHardwareBa
         dataToWear[1] = next;
         dataToWear[2] = String.valueOf(time);
 
+        startRiging();
+
         Log.i(TAG, "New String[]: " + Arrays.toString(dataToWear));
 
         Executors.newSingleThreadExecutor().execute(() -> {
@@ -175,6 +183,24 @@ public class MainActivity extends AppCompatActivity implements DefaultHardwareBa
                 Log.e(TAG, "Interrupt occurred: " + exception);
             }
         });
+    }
+
+    private void startRiging(){
+
+        int ringerMode = ((AudioManager) getSystemService(AUDIO_SERVICE)).getRingerMode();
+
+        if(ringerMode == AudioManager.RINGER_MODE_SILENT){
+            return;
+        }
+
+        vibrator.vibrate(vibe);
+
+        if(ringerMode == AudioManager.RINGER_MODE_VIBRATE){
+            return;
+        }
+
+        Ringtone ringtone = RingtoneManager.getRingtone(this, RingtoneManager.getActualDefaultRingtoneUri(getApplicationContext(), RingtoneManager.TYPE_RINGTONE));
+        ringtone.play();
     }
 
 

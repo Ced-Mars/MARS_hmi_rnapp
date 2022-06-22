@@ -21,8 +21,8 @@ import {
 import {io} from "socket.io-client";
 
 const HelloWorld = (initialProps) => {
-  const ENDPOINT = "http://192.168.43.102:4001";
-  const ENDPOINT1 = "http://192.168.43.102:4002";
+  const ENDPOINT = "http://192.168.43.103:4001";
+  const ENDPOINT1 = "http://192.168.43.103:4002";
   const [socket, setSocket] = useState(null);
   const [response, setResponse] = useState([]);
   const [actionRequested, setActionRequested] = React.useState(false);

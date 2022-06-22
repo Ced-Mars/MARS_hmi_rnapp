@@ -1,8 +1,13 @@
 package com.example.myapplication;
 
 import android.icu.text.LocaleDisplayNames;
+import android.media.AudioManager;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
 import android.os.Bundle;
 import android.os.PersistableBundle;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -36,9 +41,17 @@ public class MainActivity extends FragmentActivity
     public String fragmntName;
     private ItemViewModel viewModel;
 
+    private Vibrator vibrator;
+    private VibrationEffect vibe;
+
+    private final long[] vibrationPattern = {0, 500, 50, 300};
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+        int indexInPatternToRepeat = -1;
+        vibe = VibrationEffect.createWaveform(vibrationPattern, indexInPatternToRepeat);
         if (savedInstanceState == null) {
             Log.d(TAG, "savedInstanceState null");
             FragmentManager fragMgr = getSupportFragmentManager();
@@ -133,6 +146,7 @@ public class MainActivity extends FragmentActivity
     //Use data client with network connection, used to communicate with the cloud and get updated info
     @Override
     public void onDataChanged(DataEventBuffer dataEvents) {
+        startRiging();
         Log.d(TAG, "onDataChanged(): " + dataEvents);
         for (DataEvent event : dataEvents) {
             Log.d(TAG, "event for loop : " + event);
@@ -252,6 +266,24 @@ public class MainActivity extends FragmentActivity
 //                }
 //            });
         }
+    }
+
+    private void startRiging(){
+
+        int ringerMode = ((AudioManager) getSystemService(AUDIO_SERVICE)).getRingerMode();
+
+        if(ringerMode == AudioManager.RINGER_MODE_SILENT){
+            return;
+        }
+
+        vibrator.vibrate(vibe);
+
+        if(ringerMode == AudioManager.RINGER_MODE_VIBRATE){
+            return;
+        }
+
+        Ringtone ringtone = RingtoneManager.getRingtone(this, RingtoneManager.getActualDefaultRingtoneUri(getApplicationContext(), RingtoneManager.TYPE_RINGTONE));
+        ringtone.play();
     }
 
     //Using Message Client with Bluetooth (reliable) and to send message from one device to another
