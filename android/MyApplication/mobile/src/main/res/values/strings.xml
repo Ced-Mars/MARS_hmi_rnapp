@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">My Application</string>
+    <string name="app_name">MARS</string>
     <string name="title_text">Google Sign-In\nQuickstart</string>
 
     <!-- Sign-in status messages -->
@@ -61,4 +61,8 @@
     <string name="send_photo">Send Photo</string>
 
     <string name="socketText">Valeur de la socket</string>
+
+    <!--    Notification Management-->
+    <string name="channel_name">Notification sequence</string>
+    <string name="channel_description">Notification description</string>
 </resources>

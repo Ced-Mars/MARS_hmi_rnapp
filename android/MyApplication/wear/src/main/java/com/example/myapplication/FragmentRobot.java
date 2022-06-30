@@ -65,22 +65,20 @@ public class FragmentRobot extends Fragment {
             j= savedInstanceState.getInt("COUNTER_J");
         }else{
             viewModel = new ViewModelProvider(requireActivity()).get(ItemViewModel.class);
-            viewModel.getCurrent().observe(getViewLifecycleOwner(), current -> {
+            viewModel.getCurrent().observe(getViewLifecycleOwner(), (current) -> {
                 Log.d(TAG, "Get Current Value from ViewModel:" + current);
             });
-            viewModel.getNext().observe(getViewLifecycleOwner(), next -> {
+            viewModel.getNext().observe(getViewLifecycleOwner(), (next) -> {
                 Log.d(TAG, "Get Next Value from ViewModel:" + next);
                 next1 = next;
                 prochaineAction.setText(next);
             });
-            viewModel.getTime().observe(getViewLifecycleOwner(), time -> {
+            viewModel.getTime().observe(getViewLifecycleOwner(), (time) -> {
                 Log.d(TAG, "Get Time Value from ViewModel:" + time);
                 i = time;
                 j= time;
             });
         }
-
-
 
         curvedTextView = view.findViewById(R.id.currentState);
         tempsRestant = view.findViewById(R.id.tempsRestant);
@@ -113,8 +111,6 @@ public class FragmentRobot extends Fragment {
         progress.setProgress(100);
         mHandler = new Handler();
         runnable.run();
-
-
     }
 
     @Override

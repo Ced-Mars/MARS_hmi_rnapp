@@ -49,7 +49,13 @@ public class FragmentUser extends Fragment {
         viewModel = new ViewModelProvider(requireActivity()).get(ItemViewModel.class);
         viewModel.getCurrent().observe(getViewLifecycleOwner(), current -> {
             Log.d(TAG, "Get Current Value from ViewModel:" + current);
-            nom_action.setText(current);
+            if(current.contains("UNLOAD.EFFECTOR")){
+                nom_action.setText("Démonter Outil");
+            }else if(current.contains("LOAD.EFFECTOR")){
+                nom_action.setText("Monter Outil");
+            }else{
+                nom_action.setText("action non reconnue");
+            }
         });
         viewModel.getNext().observe(getViewLifecycleOwner(), next -> {
             Log.d(TAG, "Get Next Value from ViewModel:" + next);

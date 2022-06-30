@@ -21,8 +21,8 @@ import {
 import {io} from "socket.io-client";
 
 const HelloWorld = (initialProps) => {
-  const ENDPOINT = "http://192.168.43.103:4001";
-  const ENDPOINT1 = "http://192.168.43.103:4002";
+  const ENDPOINT = "http://192.168.43.102:4001";
+  const ENDPOINT1 = "http://192.168.43.102:4002";
   const [socket, setSocket] = useState(null);
   const [response, setResponse] = useState([]);
   const [actionRequested, setActionRequested] = React.useState(false);
@@ -121,10 +121,10 @@ const HelloWorld = (initialProps) => {
                           {value.target == "USER" ? 
                             <View style={{flex:1, flexDirection:'row'}}>
                               <View style={{flex:2, margin:5, alignItems:"center", justifyContent:'center'}}>
-                                <Text style={{alignSelf:'center', textAlign:'center'}}>{value.stepStages[0].type == "LOAD.EFFECTOR" ? "Veuillez Monter le Nouvel Outil" : "Veuillez Démonter l'Outil" }</Text>
+                                <Text style={{alignSelf:'center', textAlign:'center'}}>{value.stepStages[0].type == "LOAD.EFFECTOR" ? "Veuillez Monter l'Outil" : "Veuillez Démonter l'Outil" }</Text>
                               </View>
                               <View style={{flex:1, flexDirection:'row', alignItems:"center", justifyContent:'center'}}>
-                                <PaperButton mode='outlined' onPress={onToggleSnackBar} style={{borderColor:'blue'}}>Valider</PaperButton>
+                              <PaperButton mode='outlined' onPress={onToggleSnackBar} style={{borderColor:'blue'}}>Valider</PaperButton>
                               </View>
                             </View>
                           :
@@ -150,10 +150,10 @@ const HelloWorld = (initialProps) => {
                         >
                           <View style={{flex:1, alignItems:"center", justifyContent:'center',}}>
                             <View style={{flex:2, alignItems: "center", justifyContent: value.target == "USER" ? "flex-end" : "center" , alignSelf:'flex-start'}}>
-                              <Text style={{alignSelf: 'flex-start', marginLeft:10}}>{value.target == "USER" ? "Action Opérateur" : "Séquence Robot"}</Text>
+                              <Text style={{alignSelf: 'flex-start', marginLeft:10}}>{value.target == "USER" ? value.stepStages[0].type == "LOAD.EFFECTOR" ? "Monter Outil" : "Démonter Outil"  : "Séquence Robot"}</Text>
                             </View>
                               {value.target == "USER" ? <View style={{flex:1, alignItems:"center", justifyContent:'flex-start', alignSelf:'flex-start'}}>
-                                <Text style={{alignSelf:'flex-start', marginLeft:20, color:'grey', textAlign:'center', fontSize:10}}>{value.stepStages[0].type == "LOAD.EFFECTOR" ? "Monter Outil" : "Démonter Outil" }</Text>
+                                <Text style={{alignSelf:'flex-start', marginLeft:20, color:'grey', textAlign:'center', fontSize:10}}>{value.target == "USER" ? "Action Opérateur" : "Séquence Robot"}</Text>
                               </View> : null}
                           </View>
                           <View style={{flex:1, alignItems:"center", justifyContent:'center'}}>

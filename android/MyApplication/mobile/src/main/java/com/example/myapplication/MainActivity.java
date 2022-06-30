@@ -1,9 +1,14 @@
 package com.example.myapplication;
 
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Intent;
 import android.media.AudioManager;
 import android.media.Ringtone;
 import android.media.RingtoneManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
@@ -11,6 +16,8 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.fragment.app.Fragment;
 
 import com.facebook.react.ReactFragment;
@@ -45,32 +52,39 @@ public class MainActivity extends AppCompatActivity implements DefaultHardwareBa
         MessageClient.OnMessageReceivedListener, CapabilityClient.OnCapabilityChangedListener, DataClient.OnDataChangedListener {
 
     private static final String TAG = "MainActivity";
+    private static final String CHANNEL_ID = "test";
 
     private Vibrator vibrator;
     private VibrationEffect vibe;
+
+    NotificationManagerCompat notificationManager;
 
     private final long[] vibrationPattern = {0, 500, 50, 300};
 
     private Socket mSocket;
     {
         try {
-            mSocket = IO.socket("http://192.168.43.103:4001");
+            mSocket = IO.socket("http://192.168.43.102:4001");
         } catch (URISyntaxException e) {}
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        //Socket initialization
         mSocket.on("ProchaineAction", onNewMessage);
         mSocket.on("TempsAction", onNewMessage);
         mSocket.connect();
 
+        //Vibrator initialization
         vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
         int indexInPatternToRepeat = -1;
         vibe = VibrationEffect.createWaveform(vibrationPattern, indexInPatternToRepeat);
 
         setContentView(R.layout.activity_chooser);
 
+        //React native fragment initialization
         Fragment reactNativeFragment = new ReactFragment.Builder()
                 .setComponentName("myreactnativeapp")
                 .setLaunchOptions(getLaunchOptions())
@@ -80,6 +94,13 @@ public class MainActivity extends AppCompatActivity implements DefaultHardwareBa
                 .beginTransaction()
                 .add(R.id.reactNativeFragment, reactNativeFragment)
                 .commit();
+
+
+
+
+        createNotificationChannel();
+        notificationManager = NotificationManagerCompat.from(this);
+
 
     }
 
@@ -158,12 +179,22 @@ public class MainActivity extends AppCompatActivity implements DefaultHardwareBa
         dataToWear[1] = next;
         dataToWear[2] = String.valueOf(time);
 
-        startRiging();
+        if(current.contains("LOAD.EFFECTOR")){
+            //Start ringing/playing a song
+            startRiging();
+            //send notification
+            sendNotification("Veuillez Monter l'Outil");
+        }else if(current.contains("UNLOAD.EFFECTOR")){
+            //Start ringing/playing a song
+            startRiging();
+            //send notification
+            sendNotification("Veuillez démonter l'Outil");
+        }
 
+        //Send data to wear app
         Log.i(TAG, "New String[]: " + Arrays.toString(dataToWear));
-
         Executors.newSingleThreadExecutor().execute(() -> {
-            PutDataMapRequest putDataMapRequest = PutDataMapRequest.createWithAutoAppendedId(path);
+            PutDataMapRequest putDataMapRequest = PutDataMapRequest.create(path);
             putDataMapRequest.getDataMap().putStringArray(key, dataToWear);
             PutDataRequest request = putDataMapRequest.asPutDataRequest();
             request.setUrgent();
@@ -183,6 +214,41 @@ public class MainActivity extends AppCompatActivity implements DefaultHardwareBa
                 Log.e(TAG, "Interrupt occurred: " + exception);
             }
         });
+
+
+    }
+
+    private void sendNotification(String message){
+        Intent intent = getIntent();
+        intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(R.drawable.alert_icon)
+                .setContentTitle("Action Utilisateur Requise !")
+                .setContentText(message)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setContentIntent(pendingIntent)
+                .setAutoCancel(true);
+
+        notificationManager.notify(1, builder.build());
+    }
+
+    private void createNotificationChannel() {
+        // Create the NotificationChannel, but only on API 26+ because
+        // the NotificationChannel class is new and not in the support library
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CharSequence name = getString(R.string.channel_name);
+            String description = getString(R.string.channel_description);
+            int importance = NotificationManager.IMPORTANCE_DEFAULT;
+            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
+            channel.setDescription(description);
+            // Register the channel with the system; you can't change the importance
+            // or other notification behaviors after this
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel);
+        }
     }
 
     private void startRiging(){
